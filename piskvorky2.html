@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piškvorky 5x5 nebo 10x10</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .board {
+            display: grid;
+            gap: 5px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background-color: white;
+            border: 2px solid black;
+            cursor: pointer;
+        }
+        .cell.taken {
+            cursor: not-allowed;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .winner {
+            font-size: 24px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Piškvorky</h1>
+    <label for="size">Vyber velikost hracího pole:</label>
+    <select id="size" onchange="resetGame()">
+        <option value="5">5x5</option>
+        <option value="10">10x10</option>
+    </select>
+    <div id="board" class="board"></div>
+    <p id="status"></p>
+    <button onclick="resetGame()">Restartovat hru</button>
+
+    <script>
+        let size = 5; // Výchozí velikost pole
+        let board = [];
+        let currentPlayer = "X";
+        let gameActive = true;
+
+        function createBoard() {
+            size = parseInt(document.getElementById("size").value);
+            board = Array(size).fill().map(() => Array(size).fill(""));
+            const boardElement = document.getElementById("board");
+            boardElement.innerHTML = "";
+            boardElement.style.gridTemplateColumns = `repeat(${size}, 50px)`;
+            boardElement.style.gridTemplateRows = `repeat(${size}, 50px)`;
+
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
+                    let cell = document.createElement("div");
+                    cell.classList.add("cell");
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.addEventListener("click", () => makeMove(row, col, cell));
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        function makeMove(row, col, cellElement) {
+            if (!gameActive || board[row][col] !== "") return;
+
+            board[row][col] = currentPlayer;
+            cellElement.textContent = currentPlayer;
+            cellElement.classList.add("taken");
+
+            if (checkWinner(row, col)) {
+                document.getElementById("status").innerHTML = `<span class='winner'>Vyhrál hráč ${currentPlayer}!</span>`;
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === "X" ? "O" : "X";
+        }
+
+        function checkWinner(row, col) {
+            return checkDirection(row, col, 1, 0) || // Horizontální
+                   checkDirection(row, col, 0, 1) || // Vertikální
+                   checkDirection(row, col, 1, 1) || // Diagonála \
+                   checkDirection(row, col, 1, -1);  // Diagonála /
+        }
+
+        function checkDirection(row, col, rowStep, colStep) {
+            let count = 1;
+            count += countInDirection(row, col, rowStep, colStep);
+            count += countInDirection(row, col, -rowStep, -colStep);
+            return count >= 5; // Pokud je 5 stejných symbolů v řadě, vyhraje
+        }
+
+        function countInDirection(row, col, rowStep, colStep) {
+            let count = 0;
+            let r = row + rowStep;
+            let c = col + colStep;
+
+            while (r >= 0 && r < size && c >= 0 && c < size && board[r][c] === currentPlayer) {
+                count++;
+                r += rowStep;
+                c += colStep;
+            }
+
+            return count;
+        }
+
+        function resetGame() {
+            gameActive = true;
+            currentPlayer = "X";
+            document.getElementById("status").textContent = "";
+            createBoard();
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
